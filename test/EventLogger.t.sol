@@ -5,6 +5,18 @@ import {Test} from "forge-std/Test.sol";
 import {EventLogger} from "../src/EventLogger.sol";
 import {Vm} from "forge-std/Vm.sol";
 
+/**
+ * @title EventLogs Exercise
+ * @author Elia Bordoni
+ * @notice This test suite verifies that the `EventLogger` contract emits and encodes events correctly.
+ *         It covers various event types, including simple and complex ones with arrays and strings.
+ * @dev The tests use Foundry’s `vm.recordLogs()` to capture emitted logs and manually decode them
+ *      to ensure that topics and data match expected values.
+ *
+ * 🔗 GitHub: https://github.com/eliab256
+ * 🔗 LinkedIn: https://www.linkedin.com/in/elia-bordoni/
+ */
+
 contract EventLoggerTest is Test {
     EventLogger logger;
 
@@ -80,6 +92,10 @@ contract EventLoggerTest is Test {
         assertEq(id, testId);
     }
 
+    /**
+     * @notice Tests the simple `Ping` event with no arguments.
+     * @dev Since there are no parameters, only the event signature is emitted as topic[0].
+     */
     function testPing() public {
         vm.recordLogs();
         vm.prank(user1);
@@ -96,6 +112,12 @@ contract EventLoggerTest is Test {
         assertEq(data.length, 0); //there is no not-indexed arguments
     }
 
+    /**
+     * @notice Tests a complex event with both an address and dynamic data types (array + string).
+     * @dev Demonstrates how dynamic types are encoded in the event `data` field
+     *      and how to decode them back for assertion.
+     * @custom-suggestion Arrays cannot be `indexed` in Solidity events; they must be part of the data payload.
+     */
     function testEmitComplex() public {
         //emit Complex(_user, _values, _note);
         address user = user2;
