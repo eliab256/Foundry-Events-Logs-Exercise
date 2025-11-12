@@ -17,8 +17,8 @@ contract EventLogger {
         emit Transfer(msg.sender, _to, _amount);
     }
 
-    function emitMessage(string calldata _content) external {
-        emit Message(_content, block.timestamp);
+    function emitMessage(string calldata _content, uint256 _id) external {
+        emit Message(_content, _id);
     }
 
     function emitComplex(

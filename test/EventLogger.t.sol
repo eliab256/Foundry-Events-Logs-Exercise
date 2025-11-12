@@ -1,63 +1,141 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/EventLogger.sol";
+import {Test} from "forge-std/Test.sol";
+import {EventLogger} from "../src/EventLogger.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract EventLoggerTest is Test {
     EventLogger logger;
+
+    //create two users
+    address user1 = makeAddr("user1");
+    address user2 = makeAddr("user2");
 
     function setUp() public {
         logger = new EventLogger();
     }
 
     function testEmitTransfer() public {
-        address to = address(0x123);
+        address to = user2;
         uint256 amount = 1000;
 
-        vm.expectEmit(true, true, false, true);
-        emit EventLogger.Transfer(address(this), to, amount);
-
+        vm.recordLogs();
+        vm.prank(user1);
         logger.emitTransfer(to, amount);
 
-        // verify logs and compare with expected values
+        // extract event logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 1);
+        Vm.Log memory fullEvent = entries[0];
+        bytes32 eventSignature = fullEvent.topics[0]; //event signature hashed
+        bytes32 topic1 = fullEvent.topics[1]; //is indexed
+        bytes32 topic2 = fullEvent.topics[2]; //is indexed
+        bytes memory data = fullEvent.data; //is not indexed
+
+        // encode expected values and compare with logs
+        assertEq(
+            eventSignature,
+            keccak256("Transfer(address,address,uint256)")
+        );
+        assertEq(topic1, bytes32(uint256(uint160(user1))));
+        assertEq(topic2, bytes32(uint256(uint160(user2))));
+        assertEq(data, abi.encode(amount));
+
+        //decode data from event and compare with expected values
+        address testFrom = address(uint160(uint256(topic1)));
+        address testTo = address(uint160(uint256(topic2)));
+        uint256 testAmount = abi.decode(data, (uint256));
+
+        assertEq(testFrom, user1);
+        assertEq(testTo, user2);
+        assertEq(testAmount, amount);
     }
 
     function testEmitMessage() public {
-        string memory content = "Hello, World!";
-        uint256 timestamp = block.timestamp;
+        string memory message = "Hello, World!";
+        uint256 id = 10;
 
-        vm.expectEmit(false, false, false, true);
-        emit EventLogger.Message(content, timestamp);
+        vm.recordLogs();
+        vm.prank(user1);
+        logger.emitMessage(message, id);
 
-        logger.emitMessage(content);
+        // extract event logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 1);
+        Vm.Log memory fullEvent = entries[0];
+        bytes32 eventSignature = fullEvent.topics[0];
+        bytes memory data = fullEvent.data;
+        (string memory testMessage, uint256 testId) = abi.decode(
+            data,
+            (string, uint256)
+        );
 
-        // verify logs and compare with expected values
+        // encode expected values and compare with logs
+        assertEq(eventSignature, keccak256("Message(string,uint256)"));
+        assertEq(data, abi.encode(message, id));
+
+        //decode data from event and compare with expected values
+        assertEq(message, testMessage);
+        assertEq(id, testId);
     }
 
     function testPing() public {
-        vm.expectEmit(false, false, false, false);
-        emit EventLogger.Ping();
-
+        vm.recordLogs();
+        vm.prank(user1);
         logger.ping();
 
         // verify logs and compare with expected values
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 1);
+        Vm.Log memory fullEvent = entries[0];
+        bytes32 eventSignature = fullEvent.topics[0];
+        bytes memory data = fullEvent.data;
+
+        assertEq(eventSignature, keccak256("Ping()"));
+        assertEq(data.length, 0); //there is no not-indexed arguments
     }
 
     function testEmitComplex() public {
-        address user = address(0x456);
+        //emit Complex(_user, _values, _note);
+        address user = user2;
         uint256[] memory values = new uint256[](3);
         values[0] = 1;
         values[1] = 2;
         values[2] = 3;
         string memory note = "Test Note";
 
-        vm.expectEmit(true, false, false, true);
-        emit EventLogger.Complex(user, values, note);
-
+        vm.recordLogs();
+        vm.prank(user1);
         logger.emitComplex(user, values, note);
 
-        // verify logs and compare with expected values
-    }
+        // extract event logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 1);
+        Vm.Log memory fullEvent = entries[0];
+        bytes32 eventSignature = fullEvent.topics[0];
+        bytes32 topic1 = fullEvent.topics[1];
+        bytes memory data = fullEvent.data;
+        (uint256[] memory testValues, string memory testNote) = abi.decode(
+            data,
+            (uint256[], string)
+        );
 
+        // verify logs and compare with expected values
+        assertEq(
+            eventSignature,
+            keccak256("Complex(address,uint256[],string)")
+        );
+        assertEq(topic1, bytes32(uint256(uint160(user2))));
+        assertEq(data, abi.encode(values, note));
+
+        //decode data from event and compare with expected values
+        assertEq(address(uint160(uint256(topic1))), user2);
+        assertEq(testValues, values);
+        assertEq(testNote, note);
+        assertEq(testValues.length, 3);
+        assertEq(testValues[0], 1);
+        assertEq(testValues[1], 2);
+        assertEq(testValues[2], 3);
+    }
 }
