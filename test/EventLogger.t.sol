@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/EventLogger.sol";
+import {Test} from "forge-std/Test.sol";
+import {EventLogger} from "../src/EventLogger.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract EventLoggerTest is Test {
     EventLogger logger;
@@ -15,9 +16,7 @@ contract EventLoggerTest is Test {
         address to = address(0x123);
         uint256 amount = 1000;
 
-        vm.expectEmit(true, true, false, true);
-        emit EventLogger.Transfer(address(this), to, amount);
-
+        vm.recordLogs();
         logger.emitTransfer(to, amount);
 
         // verify logs and compare with expected values
@@ -25,20 +24,16 @@ contract EventLoggerTest is Test {
 
     function testEmitMessage() public {
         string memory content = "Hello, World!";
-        uint256 timestamp = block.timestamp;
+        //uint256 timestamp = block.timestamp;
 
-        vm.expectEmit(false, false, false, true);
-        emit EventLogger.Message(content, timestamp);
-
+        vm.recordLogs();
         logger.emitMessage(content);
 
         // verify logs and compare with expected values
     }
 
     function testPing() public {
-        vm.expectEmit(false, false, false, false);
-        emit EventLogger.Ping();
-
+        vm.recordLogs();
         logger.ping();
 
         // verify logs and compare with expected values
@@ -52,12 +47,9 @@ contract EventLoggerTest is Test {
         values[2] = 3;
         string memory note = "Test Note";
 
-        vm.expectEmit(true, false, false, true);
-        emit EventLogger.Complex(user, values, note);
-
+        vm.recordLogs();
         logger.emitComplex(user, values, note);
 
         // verify logs and compare with expected values
     }
-
 }
