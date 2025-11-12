@@ -6,7 +6,7 @@ contract EventLogger {
     event Transfer(address indexed from, address indexed to, uint256 amount);
 
     // Evento con solo parametri non indicizzati
-    event Message(string content, uint256 timestamp);
+    event Message(string content, uint256 id);
 
     // Evento con un solo topic (nome evento)
     event Ping();
