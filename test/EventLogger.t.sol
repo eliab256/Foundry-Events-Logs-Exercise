@@ -8,39 +8,55 @@ import {Vm} from "forge-std/Vm.sol";
 contract EventLoggerTest is Test {
     EventLogger logger;
 
+    //create two users
+    address user1 = makeAddr("user1");
+    address user2 = makeAddr("user2");
+
     function setUp() public {
         logger = new EventLogger();
     }
 
     function testEmitTransfer() public {
-        address to = address(0x123);
+        address to = user2;
         uint256 amount = 1000;
 
         vm.recordLogs();
+        vm.prank(user1);
         logger.emitTransfer(to, amount);
 
-        // verify logs and compare with expected values
+        // extract event logs
+
+        // encode expected values and compare with logs
+
+        //decode data from event and compare with expected values
     }
 
     function testEmitMessage() public {
-        string memory content = "Hello, World!";
-        //uint256 timestamp = block.timestamp;
+        string memory message = "Hello, World!";
+        uint256 id = 10;
 
         vm.recordLogs();
-        logger.emitMessage(content);
+        vm.prank(user1);
+        logger.emitMessage(message, id);
 
-        // verify logs and compare with expected values
+        // extract event logs
+
+        // encode expected values and compare with logs
+
+        //decode data from event and compare with expected values
     }
 
     function testPing() public {
         vm.recordLogs();
+        vm.prank(user1);
         logger.ping();
 
         // verify logs and compare with expected values
     }
 
     function testEmitComplex() public {
-        address user = address(0x456);
+        //emit Complex(_user, _values, _note);
+        address user = user2;
         uint256[] memory values = new uint256[](3);
         values[0] = 1;
         values[1] = 2;
@@ -48,8 +64,13 @@ contract EventLoggerTest is Test {
         string memory note = "Test Note";
 
         vm.recordLogs();
+        vm.prank(user1);
         logger.emitComplex(user, values, note);
 
+        // extract event logs
+
         // verify logs and compare with expected values
+
+        //decode data from event and compare with expected values
     }
 }
